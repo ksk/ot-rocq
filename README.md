@@ -10,7 +10,7 @@ For this purpose, the following changes have been made:
 - To specify load paths with the `From` syntax
 
 except for other minor changes on the proofs to avoid warnings.
-All of the `admit` and `Admitted` parts in `RichTextTests.v` still remain as they have been.
+All of the `admit` and `Admitted` parts in `RichText.v` still remain as they have been.
 
 For compilation, [`rocq-hierarchy-builder-1.10.1`](https://github.com/math-comp/hierarchy-builder) and [`coq-mathcomp-zify-1.5.0`](https://github.com/math-comp/mczify) are required.
 Then run 
