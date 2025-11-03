@@ -1,8 +1,4 @@
-From Coq Require Import ssreflect ssrfun ssrbool Omega.
-Require Import mathcomp.ssreflect.eqtype.
-Require Import mathcomp.ssreflect.seq.
-Require Import mathcomp.ssreflect.ssrnat.
-
+From mathcomp Require Import all_ssreflect zify.
 
 (* Taken from http://github.com/pi8027/formalized-postscript/blob/master/stdlib_ext.v *)
 
@@ -30,4 +26,4 @@ Ltac arith_goal_ssrnat2coqnat :=
 Ltac ssromega :=
   repeat arith_hypo_ssrnat2coqnat;
   arith_goal_ssrnat2coqnat; simpl;
-  omega.
+  lia.

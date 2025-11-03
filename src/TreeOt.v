@@ -1,4 +1,5 @@
-Require Import Arith Commons ListTools Tree OtDef.
+From Stdlib Require Import Arith Basics.
+From OTRocq Require Import Commons ListTools Tree OtDef.
 
 Section TreeOTDefinition.
 
@@ -13,7 +14,7 @@ Inductive tree_command : Type :=
  | Atomic of list_command
  | OpenRoot of nat & tree_command.
 
-Fixpoint list_inv (c : list_command) :=
+Definition list_inv (c : list_command) :=
 match c with
   | TreeInsert n l => TreeRemove n l
   | TreeRemove n l => if l is [::] then TreeInsert 0 [::] else TreeInsert n l
@@ -26,7 +27,7 @@ match c with
   | OpenRoot n c => OpenRoot n (tree_inv c)
 end.
 
-Definition list_interp (op1 : list_command) (tr : tree_eqType X) : option (tree X) :=
+Definition list_interp (op1 : list_command) (tr : tree X) : option (tree X) :=
 match tr with Node x ls =>
  match op1 with
   | TreeInsert n l => NodeW x (ins n l ls)
@@ -35,7 +36,7 @@ match tr with Node x ls =>
  end 
 end.
 
-Fixpoint tree_interp (op1 : tree_command) (tr : tree_eqType X) : option (tree X) :=
+Fixpoint tree_interp (op1 : tree_command) (tr : tree X) : option (tree X) :=
 match tr with Node x ls =>
  match op1 with
   | OpenRoot n c => NodeW x (rplc n (bind (tree_interp c) (nth n ls)) ls)
@@ -148,8 +149,8 @@ Proof. elim: cs xs => [|c cs IHcs] xs /=.
      rewrite IHcs.
      * move: (A1) => /rplc_nth_eq ->.
        case: exec_all => /= [a|]; last by rewrite ?rplc_none_none /=.
-       move: A1. rewrite ?orplc_some => <-. by rewrite rplc_rplcC_eq. 
-     * by move: A1 A0 => /rplc_some_len <-; rewrite ltnNge; case: nth (nth_noneP n xs) => ? [].
+       move: A1. rewrite ?orplc_some => <-. by rewrite rplc_rplcC_eq.
+     * by move: A1 A0 => /rplc_some_len <-; rewrite ltnNge; case: nth (nth_noneP n xs) => ? //=[].
   +  by move: A1 A0 => /rplc_none_case [] // /nth_noneP ->.
  + by rewrite rplc_none_none ?exec_all_none rplc_none_none. Qed.
 
@@ -193,7 +194,7 @@ Proof. move => n1 l1 x ls [x1 ls1] [x2 ls2] _ _ n2 l2 //=;
     + move: Hins H1 => /ins_noneP; rewrite ltn_subRL. maxapply ltn_trans. by rewrite ltnn. Qed.
 
 Lemma remove_openroot_commutation :  
-forall n1 l1 x ls (m1 m2 : tree_eqType X) (f g: bool) (t : tree_command) (n : nat),
+forall n1 l1 x ls (m1 m2 : tree X) (f g: bool) (t : tree_command) (n : nat),
    NodeW x (rm n1 l1 ls) = Some m1 ->
    NodeW x (rplc n ((bind (tree_interp t)) (nth n ls)) ls) = Some m2 ->
    (exec_all tree_interp) (Some m2)
@@ -207,13 +208,13 @@ Proof. move=> n1 l1 x ls [x1 ls1] [x2 ls2] _ _ t n2 //=; case Htr_rem: tr_rem =>
     - move=> [] <-; rewrite (rm_some_nth_aft _ ls _ l1 n1) //.
       move: HN2. case: (bind (tree_interp t)) => //= [a|]; last by rewrite rplc_none_none.
       move => /rplc_some []. move => _1 _2; move: _2 _1 => _. move: HN0 => /=. move: H1. 
-      maxapply (@rplc_rmC_bef (tree_eqType X)) => /(_ a) [] -> [os] -> /=. by eauto.
+      maxapply (@rplc_rmC_bef (tree X)) => /(_ a) [] -> [os] -> /=. by eauto.
     - case H2: (n1 + size l1 <= n2) => //. move=> [] <-; 
       move: (arithm1'  H2 H1) HN2 => [] {2 3 4 5 8 9}-> Hleq. 
       simpl in HN0. rewrite (rm_some_nth_bef n1 ls _ l1 (n2 - size l1)) //.
       case: (bind (tree_interp t)) => [a /=|]; last by rewrite orplc_none //=.
       move=> /rplc_some []. move => _1 _2; move: _2 _1 => _. rewrite addnC. move: Hleq HN0.
-      maxapply (@rplc_rmC_aft (tree_eqType X)) => /(_ a) [] -> [os] -> /=. by eauto.
+      maxapply (@rplc_rmC_aft (tree X)) => /(_ a) [] -> [os] -> /=. by eauto.
    + move: Htr_rem; rewrite /tr_rem; case H1: (n2 < n1) => //; 
      case H2: (n1 + size l1 <= n2) => // ?. move:H1 => /negbT. rewrite -leqNgt => H1; 
      move: H2 => /negbT. rewrite -ltnNge => H2. case Hrplc: (rplc (n2 - n1)) => [l1'|] //=;
@@ -314,7 +315,7 @@ elim => [[n1 l1 | n1 l1 | c1 ]| n1 c1 IHl1] [[n2 l2 | n2 l2 | c2] | n2 c2]
      - move: (leq_total n1 n2). by rewrite H3 H4. 
   * rewrite nodew_some => [] [] <- Hrm. case Hint: interp => [c'|//]. interp_simpl_nw. 
     case Hint': interp => [c'' //|//] [] <- <-; rewrite -orm_some Hrm;
-    move: Hint Hint' -> => [] [] // -> //=. by eauto.
+    move: Hint Hint' -> => []// [] // -> //=; by eauto.
   * maxapply remove_openroot_commutation => /(_ f (~~f)) /= [] -> [os] ->. by eauto.
  (* Case op1 = editLabel *)
   * by solve_openroot.
@@ -369,7 +370,7 @@ Proof.
  + by move=> /nodew_some [] <- /rm_ins_id ->.
  + case: l => [|x1 l1]; first by rewrite rm_id /= => ->.
    have: (0 < size (x1 :: l1)); first by exact (ltn0Sn _).
-   move => _1 _2; move: _2 _1 => /nodew_some [] <-. maxapply (@ins_rm_id (tree_eqType X)). by move=> /= ->.
+   move => _1 _2; move: _2 _1 => /nodew_some [] <-. maxapply (@ins_rm_id (tree X)). by move=> /= ->.
  + case Hint: interp => [a|] // [] <- <-. apply ip1 in Hint. by rewrite Hint.
  + move=> /nodew_some [] <-. case Hti: (bind (tree_interp c)) => [ti_r|]; last by rewrite rplc_none_none.
    move: Hti. case Hnth: nth => [nth_r|]; last by simpl.
@@ -386,24 +387,24 @@ Instance treeInv: (OTInv (tree X) tree_command treeOT) := {inv := tree_inv; ip1 
 
 End TreeOTDefinition.
 
+From OTRocq Require Import Comp.
 Section Sandbox.
 
-Require Import Comp.
 Arguments TreeInsert [X] [cmd].
 Arguments TreeRemove [X] [cmd].
 Arguments OpenRoot [X] [cmd].
 Arguments Atomic [X] [cmd].
 
-Theorem c1: forall (op1 op2 : unit) (f : bool) (m m1 m2 : nat_eqType),
+Theorem c1: forall (op1 op2 : unit) (f : bool) (m m1 m2 : nat),
  (fun=> [eta Some]) op1 m = Some m1 ->
  (fun=> [eta Some]) op2 m = Some m2 ->
  let m21 := exec_all (fun=> [eta Some]) (Some m2) ((fun=> (fun=> (fun=> [:: tt]))) op1 op2 f) in
- let m12 := exec_all (fun=> [eta Some]) (Some m1) ((fun=> (fun=> (fun=> [:: tt]))) op2 op1 (~~ f)) in m21 = m12 /\ (exists node : nat_eqType, m21 = Some node).
+ let m12 := exec_all (fun=> [eta Some]) (Some m1) ((fun=> (fun=> (fun=> [:: tt]))) op2 op1 (~~ f)) in m21 = m12 /\ (exists node : nat, m21 = Some node).
 move => _ _ _ m m1 m2 [] <- [] <- /=. split. done. exists m. by rewrite /flip. Qed.
 
-Instance unitOT : OTBase nat_eqType unit := {interp := (fun c m => Some m); it := (fun _ _ _ => [:: tt]); it_c1:=c1}.
+Instance unitOT : OTBase nat unit := {interp := (fun c m => Some m); it := (fun _ _ _ => [:: tt]); it_c1:=c1}.
 
-Definition it1 := transform (@tree_it nat_eqType unit unitOT).
+Definition it1 := transform (@tree_it nat unit unitOT).
 
 Definition abclist := [:: Node 10 [::]; Node 11 [::]; Node 12 [::]].
 Definition abc := Node 1 abclist.
@@ -432,7 +433,7 @@ match c with
   | OpenRoot1 n c   => OpenRoot1 n (tree_inv_ext c)
 end.
 
-Fixpoint tree_it_ext (op1 op2 : tree_command_ext) (flag : bool) : seq tree_command_ext :=
+Definition tree_it_ext (op1 op2 : tree_command_ext) (flag : bool) : seq tree_command_ext :=
 match op1, op2 with
  _, _ => [:: op1]
 end.

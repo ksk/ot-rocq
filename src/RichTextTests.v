@@ -1,6 +1,6 @@
-Require Import Commons Tree OtDef RichText String Basics.
-Require Import mathcomp.algebra.ssrint.
-Require Import ListTools.
+From Stdlib Require Import String Basics.
+From mathcomp Require Import ssrint.
+From OTRocq Require Import Commons Tree OtDef RichText ListTools.
 
 Import intZmod.
 
@@ -63,13 +63,13 @@ end.
 
 Fixpoint ei (nc : int) (idx : seq nat) :=
  match idx with
-   nil => @JEditLabel int_eqType int nc
+   nil => @JEditLabel int int nc
    | n :: ns => JOpenRoot n (ei nc ns)
  end.
 
 Fixpoint li l (idx : seq nat) :=
  match idx with
-   nil => @JEditLabel int_eqType int (Posz O)
+   nil => @JEditLabel int int (Posz O)
    | [:: n] => JInsert n l
    | n :: ns => JOpenRoot n (li l ns)
  end.
@@ -80,7 +80,7 @@ Fixpoint create_lst (n : nat) (m : nat) :=
    | S n' => rcons (create_lst n' m) (m + n')
  end.
 
-Fixpoint filt (x : seq (option (tree int_eqType))) :=
+Fixpoint filt (x : seq (option (tree int))) :=
 match x with 
  | [:: Some l] => Some [:: l]
  | (Some l) :: ls => 
@@ -91,7 +91,7 @@ match x with
  | _ => None
 end.
 
-Fixpoint ri (t : tree int_eqType) (idx : seq nat) (count : nat) :=
+Fixpoint ri (t : tree int) (idx : seq nat) (count : nat) :=
  match idx with
    nil => None
    | [:: n] => match (filt (map (fun k => read t [:: k]) (create_lst count n))) with 
@@ -101,14 +101,14 @@ Fixpoint ri (t : tree int_eqType) (idx : seq nat) (count : nat) :=
      match read t [:: n] with 
       Some x =>
        match (ri x ns count) with
-        Some cmd => Some (@JOpenRoot int_eqType int n cmd)
+        Some cmd => Some (@JOpenRoot int int n cmd)
        | _ => None
        end
       | None => None
      end
  end.
 
-Fixpoint ui (t : tree int_eqType) (idx : seq nat) (p : int * nat) :=
+Definition ui (t : tree int) (idx : seq nat) (p : int * nat) :=
  let (x, count) := p in
  match idx with
    nil => None
@@ -126,7 +126,7 @@ Fixpoint ui (t : tree int_eqType) (idx : seq nat) (p : int * nat) :=
      end
  end.
 
-Fixpoint fi (t : tree int_eqType) (idx : seq nat) :=
+Fixpoint fi (t : tree int) (idx : seq nat) :=
   match idx, t with
    nil, _ => None
    | [:: n], Node x ls =>
@@ -136,7 +136,7 @@ Fixpoint fi (t : tree int_eqType) (idx : seq nat) :=
    | n :: ns, Node x ls => 
                  match nth n ls with
                   (Some t') => match fi t' ns with
-                                Some cmd => Some (@JOpenRoot int_eqType int n cmd)
+                                Some cmd => Some (@JOpenRoot int int n cmd)
                                 | None => None
                                end
                   | None => None
@@ -167,8 +167,8 @@ Eval compute in size ops.
 
 Open Scope string_scope.
 
-Definition jt := @jit int_eqType int intOT.
-Definition jp := @jinterp int_eqType int intOT.
+Definition jt := @jit int int intOT.
+Definition jp := @jinterp int int intOT.
 
 Definition run_test (o : (jcmd int) * (jcmd int)) :=
   let (op1, op2) := o in

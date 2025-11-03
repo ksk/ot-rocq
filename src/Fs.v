@@ -1,5 +1,7 @@
-Require Import mathcomp.ssreflect.path.
-Require Import Commons Tree OtDef ListTools Comp SortedTree.
+From Stdlib Require Import Basics Program.Equality.
+From mathcomp Require Import path.
+From HB Require Import structures.
+From OTRocq Require Import Commons Tree OtDef ListTools Comp SortedTree.
 Import Bool.
 
 Section FilesystemOT.
@@ -30,15 +32,16 @@ match t1, t2 with
   | RawRemove t, RawRemove t2 => (t == t2)
   | _, _ => false end.
 
-Lemma eq_cmdK: @Equality.axiom raw_fs_cmd eq_cmd.
-elim => [l k | t | t | l c IH] [l2 k2| t2| t2| l2 c2] /=;
-(try by constructor); repeat (case A0: (eq_op _ _) => /=; move: A0 => /eqP);
-try constructor; subst => // A; try by case: A.
- + subst. case A0: (eq_cmd); move: A0 => /IH;
-   constructor; subst => // A. by case: A. Qed.
+Lemma eq_cmdP (t1 t2 : raw_fs_cmd) : reflect (t1 = t2) (eq_cmd t1 t2).
+Proof.
+  apply (iffP idP).
+  - elim: t1 t2=> [l1 k1|t1|t1|l1 c1 IH][l2 k2|t2|t2|l2 c2]//=.
+    2, 3: by move/eqP<-.
+    * by move=> /andP[/eqP<-/eqP<-].
+    * by move=> /andP[/eqP<-/IH<-].
+  - by move=> <-; elim: t1 {t2}=> [l k|t|t|l c IH]//=; rewrite ?eqxx. Qed.
 
-Canonical cmd_eqMixin := EqMixin eq_cmdK.
-Canonical cmd_eqType := Eval hnf in EqType raw_fs_cmd cmd_eqMixin.
+HB.instance Definition _ := hasDecEq.Build raw_fs_cmd eq_cmdP.
 
 Ltac correct_label A := let H := fresh "H" in 
   move: (find_pred A) => H; rewrite /by_value /= in H; move: H => /eqP H; subst.
@@ -98,7 +101,8 @@ raw_fs_interp op (Node v cs) = Some t ->
 raw_fs_interp op (Node v' cs) = Some (Node v' (children t)).
 by case: op v v' cs t => [l l'|c |c |l op] v v' cs [vt cst] /=;
  [case: find => [[??]|] //=; case: has | case has | 
-  case find => [?|] //=; case eq_op | case: bind => a]; move => //= [] [] ? ->. Qed.
+  case find => [?|] //=; case eq_op | case: bind => a]=> //=[][]?->. Qed.
+
 
 Corollary interp_some c t t': raw_fs_interp c t = Some t' -> value t = value t'.
 move: (interp_label_preserving c t); rewrite /label_preserving.
@@ -183,15 +187,15 @@ match t1, t2 with
   | _, _ => false
 end.
 
-Lemma eq_insK: @Equality.axiom ins_cmd eq_ins.
-elim => [t | l c IH] [t2| l2 c2] /=;
-(try by constructor); repeat (case A0: (eq_op _ _) => /=; move: A0 => /eqP); 
-try constructor; subst => // A; try by case: A.
- + subst. case A0: (eq_ins); move: A0 => /IH;
-   constructor; subst => // A. by case: A. Qed.
+Lemma eq_insP (t1 t2 : ins_cmd) : reflect (t1 = t2) (eq_ins t1 t2).
+Proof.
+  apply (iffP idP).
+  - elim: t1 t2=> [t1|l1 c1 IH][t2|l2 c2]//=.
+    + by move/eqP=> <-.
+    + by move/andP=> [/eqP<-/IH<-].
+  - by move=> <-; elim: t1=> [t|l c IH]//=; rewrite eqxx IH. Qed.
 
-Canonical ins_eqMixin := EqMixin eq_insK.
-Canonical ins_cmd_eqType := Eval hnf in EqType ins_cmd ins_eqMixin.
+HB.instance Definition _ := hasDecEq.Build ins_cmd eq_insP.
 
 Fixpoint subdiv (t : tree T) : seq (raw_fs_cmd) :=
 match t with Node v cs => RawCreate (Node v [::]) :: (map (fun y => RawOpen v y) (flatten (map subdiv cs))) end.
@@ -246,10 +250,10 @@ Lemma subdivision_step: forall t v xs, is_tree_sorted R (Node v xs) -> is_tree_s
   raw_fs_interp (RawCreate (Node v xs)) t.
 move => [vt tcs]; intros. rewrite (@eq_map _ _ _ _ (open_create v)) exec_all_ind map_comp.
 move A0: (bind (raw_fs_interp (RawCreate (Node v [::]))) (Some (Node vt tcs))) => [[va csa]|] //=;
-move: A0 => /=; case A0: (has _ _) => //=; [move => [] [] -> <-| by rewrite exec_all_none].
- + rewrite sd_open. rewrite /flip /= without_insert_i //. sop_simpl. rewrite /= create_many ?has_without //.
- + use_sortedness H.
- + use_sortedness H0. apply Rord.
+move: A0 => /=; case A0: (has _ _) => //=; [move=> []-><-| by rewrite exec_all_none]. 
+rewrite sd_open /flip/=. 
+ + by rewrite without_insert_i//; sop_simpl; rewrite create_many//; use_sortedness H.
+ + by use_sortedness H0; apply Rord.
  + by rewrite has_insert /by_value /= eq_refl orb_true_r. Qed.
 
 Lemma insert_subdivision: forall c t, is_tree_sorted R t -> is_tree_sorted R c -> 
@@ -435,7 +439,7 @@ move: A1' A1 => /find_by_value <- A1. case A3: eq_op => //=; rewrite /flip /bind
 
 Lemma c1_e_e ve ve' vf vf': C1' (RawEdit vf vf') (RawEdit ve ve').
 move => f [v cs] [v' cs'] [v'' cs''] /= S. rewrite /without' -lock.
-assert (H: sorted (T:=tree_eqType T) (treeR R) cs) by use_sortedness S. 
+assert (H: sorted (T:=tree T) (treeR R) cs) by use_sortedness S. 
 case A0: find => //= [[fa fcs]]. case A1: has => //= [] [] <- <-.
 case A0': find => //= [[ea ecs]]. case A1': has => //= [] [] <- <-.
 rewrite eq_sym. case A2: eq_op => /=; rewrite eq_sym; case A2': eq_op => /=.
@@ -515,8 +519,8 @@ Lemma c1_o_o op1 op2: C1' op1 op2 ->
    rewrite eq_sym. case A3: eq_op.
   * move: A3 => /eqP A3; subst.
     move A0: (find (by_value l1) cs) => [[vf csf]|] //=.
-    case A1: raw_fs_interp => [[va csa]|] //= [] [] <- <-.
-    case A2: raw_fs_interp => [[vb csb]|] //= [] [] <- <-.
+    case A1: raw_fs_interp => [[va csa]|] //= [] <- <-.
+    case A2: raw_fs_interp => [[vb csb]|] //= [] <- <-.
     move: (find_sorted R v _ _ _ S A0) => SF.
     move: (IH f (Node vf csf) _ _ SF A1 A2) => /= IH0.
     move: (find_pred A0) => H. rewrite /by_value /= in H. move: H A0 => /eqP -> A0.
@@ -529,8 +533,8 @@ Lemma c1_o_o op1 op2: C1' op1 op2 ->
   * rewrite /bind /=.
     case A1: find => [[va csa]|] //=.
     case A2: find => [[vb csb]|] //=.
-    case A4: raw_fs_interp => [[ve cse]|] //= [] [] <- <-.
-    case A5: raw_fs_interp => [[vf csf]|] //= [] [] <- <-.
+    case A4: raw_fs_interp => [[ve cse]|] //= [] <- <-.
+    case A5: raw_fs_interp => [[vf csf]|] //= [] <- <-.
     move: (interp_some _ _ _ A4) (interp_some _ _ _ A5) => /= H1 H2; subst; subst.
     correct_label A1. correct_label A2.
     rewrite /= /flip /= /bind /=. sop_simpl; rewrite A1 A2 A4 A5.

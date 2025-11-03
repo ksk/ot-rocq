@@ -1,4 +1,5 @@
-Require Import Commons.
+From OTRocq Require Import Commons.
+From HB Require Import structures.
 
 (* Definition of Tree as ssreflect eqType *)
 Section TreeDef.
@@ -108,11 +109,41 @@ End Weight.
 
 End TreeDef.
 
-Definition tree_eqMixin (T : eqType) := PcanEqMixin (@codeK T).
-Canonical tree_eqType (T : eqType) := @EqType (tree T) (tree_eqMixin T).
+(* Use HB for Type to be eqType (without the results above except for tree_ind) *)
+Section TreeEqType.
+  Context {T : eqType}.
 
-Check @Node.
+  Fixpoint eq_Tree (t1 t2 : tree T) : bool :=
+    match t1 with Node x1 ts1 =>
+      match t2 with Node x2 ts2 =>
+        (x1 == x2) && (fix eqTs ts1 ts2 :=
+                         match ts1 with
+                         | [::] => match ts2 with [::] => true | _ => false end
+                         | ts1h :: ts1t =>
+                             match ts2 with
+                             | [::] => false
+                             | ts2h :: ts2t => (eq_Tree ts1h ts2h) && eqTs ts1t ts2t
+                             end
+                         end) ts1 ts2
+      end
+   end.
 
+  Lemma eq_TreeP (t1 t2 : tree T) : reflect (t1 = t2) (eq_Tree t1 t2).
+  Proof.
+    apply (iffP idP).
+    - move: t1 t2; apply: tree_ind=> [x1|x1 ts1 IH][x2 ts2]//=/andP[/eqP->].
+      + by case: ts2.
+      + move=> Es; f_equal.
+        by elim: {x1 x2} ts1 ts2 IH Es=> 
+          [|t1 ts1 IHs][|t2 ts2]//=[E Es]/andP[/E->/IHs]/(_ Es)->.
+    - move=> <-; move: t1 {t2}; 
+      apply: tree_ind=> [x|x ts IH]/=; rewrite eqxx//=.
+      by elim: {x} ts IH=> [|t ts IH]//=[->/IH->].
+  Qed.
+  HB.instance Definition _ := hasDecEq.Build (tree T) eq_TreeP.
+
+End TreeEqType.
+  
 Lemma tree_eqP (T : eqType) (t1 t2 : T) l1 l2: Node t1 l1 == Node t2 l2 <-> (t1 = t2) /\ (l1 = l2).
 split. by move /eqP => [] -> ->. by case => -> ->. Qed.
 

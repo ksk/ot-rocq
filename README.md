@@ -1,3 +1,31 @@
+# Rocq-verified Operational transformation for tree-like data structures
+
+This fork of [JetBrains/ot-coq](https://github.com/JetBrains/ot-coq) is created to use it with [Rocq 9.0.0](https://rocq-prover.org/). 
+For this purpose, the following changes have been made:
+
+- To use `Hierarchy Builder` to implement `eqType`
+
+- To use `Mczify` instead of `Omega`
+
+- To specify load paths with the `From` syntax
+
+except for other minor changes on the proofs to avoid warnings.
+All of the `admit` and `Admitted` parts in `RichTextTests.v` still remain as they have been.
+
+For compilation, [`rocq-hierarchy-builder-1.10.1`](https://github.com/math-comp/hierarchy-builder) and [`coq-mathcomp-zify-1.5.0`](https://github.com/math-comp/mczify) are required.
+Then run 
+```
+coq_makefile -f _CoqProject -o CoqMakefile
+make -f CoqMakefile
+```
+to compile it.
+
+The original code (tag `original-ot-coq`) is preserved for reference.
+The branch `ot-rocq` contains modifications to make it work on modern environments. The original `README.md` follows below.
+
+
+-------------------
+
 # Coq-verified Operational transformation for tree-like data structures
 
 [![JetBrains research project](https://jb.gg/badges/obsolete.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)

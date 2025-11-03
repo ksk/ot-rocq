@@ -1,6 +1,6 @@
-Require Import OtDef Ssromega Tree Basics ArithAux Commons.
-Require Export mathcomp.ssreflect.seq.
-Require Import ListTools.
+From Stdlib Require Import Basics.
+From mathcomp Require Export seq.
+From OTRocq Require Import OtDef Tree ArithAux Commons ListTools.
 
 Section RichTextOTDefinition.
 
@@ -389,7 +389,7 @@ Lemma ins_flat_corr {n1 l1 n2 x2 l2}:
 Proof. comp_unfold; rewrite [n1 <= n2]leqNgt => _.
  case: ltngtP => //=; rewrite ?leqnn ?leqnSn; intuition. Qed.
 
-Lemma L0: forall n (l1 l2 : seq (tree_eqType X)), 
+Lemma L0: forall n (l1 l2 : seq (tree X)), 
   weights (rotr n (drop (size l1) (rot n l2))) <= weights l2.
 by elim => [|n IHn] l1 l2 /=; rewrite ?weights_rotr ?weights_rot;
  [set j := rot 0 l2 | set j := rot (n.+1) l2]; 

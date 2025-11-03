@@ -1,0 +1,3 @@
+-Q src OTRocq
+-arg -w -arg -notation-overridden
+src

@@ -1,4 +1,4 @@
-Require Import Ssromega OtDef Commons.
+From OTRocq Require Import Ssromega OtDef Commons.
 
 Lemma ltnSn n: n < S n. ssromega. Qed.
 Lemma list_const: forall X X' (l : list X') (x : X), match l with nil => x | _ :: _ => x end = x.
@@ -120,9 +120,9 @@ Theorem ot_execution: forall nSteps op1 op2 op1' op2' m (m1 m2 : X), exec_all in
 transform it op1 op2 nSteps = Some (op2', op1') ->
 exec_all interp (Some m1) op2' = exec_all interp (Some m2) op1' /\ exists m3, exec_all interp (Some m1) op2' = Some m3.
 elim => [|n IHn] op1 op2 op1' op2' m m1 m2 [h h'] H0 //. rewrite transform_ind in H0.
-case: op1 H0 h => [[H0 H1] [h]| x xs H0 h].
+case: op1 H0 h => [[H0 H1] h| x xs H0 h].
   + rewrite -H0 -H1 -h /= h'. by eauto.
-  + case: op2 H0 h' h => [[H0 H1] [h']| y ys].
+  + case: op2 H0 h' h => [[H0 H1] h'| y ys].
     * rewrite -H0 -H1 -h' /=. eauto.
     * move A0: (it y x false) => y'. move A1: (transform it xs y' n) => [[y'' xs']|] //.
       move A2: (it x y true) => x'.  move A3: (transform it (x' ++ xs') ys n) => [[ys' x'']|] //= [H0 H1].

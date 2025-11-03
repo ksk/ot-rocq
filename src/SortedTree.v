@@ -1,5 +1,7 @@
-Require Import Basics Commons Tree OtDef ListTools Comp.
-Require Export mathcomp.ssreflect.path.
+From Stdlib Require Import Basics.
+From OTRocq Require Import Commons Tree OtDef ListTools Comp.
+From HB Require Import structures.
+From mathcomp Require Export path.
 Import Bool.
 
 Definition asymmetric {T} (R : rel T) := (forall x y : T, R x y = ~~(R y x)).
@@ -88,17 +90,28 @@ Structure sorted_tree : Type := STree {
 
 Definition SNode (t : T) : sorted_tree. by apply (@STree (Node t [::])). Defined.
 
-Canonical  sorted_tree_subType := Eval hnf in [subType for treeOf].
-Definition sorted_tree_eqMixin := Eval hnf in [eqMixin of sorted_tree by <:].
-Canonical  sorted_tree_eqType  := Eval hnf in  EqType (sorted_tree) sorted_tree_eqMixin.
+Section EqSortedTree.
+  Definition eq_sorted_tree (s1 s2 : sorted_tree) : bool := treeOf s1 == treeOf s2.
 
-Require Import ProofIrrelevance.
+  Lemma eq_sorted_treeP (s1 s2 : sorted_tree) : reflect (s1 = s2) (eq_sorted_tree s1 s2).
+  Proof.
+    apply (iffP idP).
+    - move: s1 s2=> [st1 stp1][st2 stp2]; rewrite /eq_sorted_tree=> /=/eqP E.
+      by move: E stp2=> <-stp2; f_equal; apply: bool_irrelevance.
+    - by move=> ->; rewrite /eq_sorted_tree eqxx.
+  Qed.
+
+  HB.instance Definition _ := hasDecEq.Build sorted_tree eq_sorted_treeP.
+
+End EqSortedTree.
+
+(* Require Import ProofIrrelevance. *)
 
 Lemma st_eq (t1 t2 : sorted_tree): t1 = t2 <-> treeOf t1 = treeOf t2.
  split. 
  + by move: t1 t2 => [t1 ?] [t2 ?] [].
- + case: t1 t2 => [t1 S1] [t2 S2] /= A0. subst.
-   by move: (proof_irrelevance _ S1 S2) => ->. Qed.
+ + move: t1 t2=> [t1 tp1][t2 tp2]/=E; move: E tp2=> <-tp2; f_equal.
+   by apply bool_irrelevance. Qed.
 
 Corollary opt_eq (t1 t2 : option sorted_tree): t1 = t2 <-> (fmap treeOf) t1 = (fmap treeOf) t2.
 case: t1 t2 => [t1|] [t2|] //=. by split; case => /st_eq ->. Qed.
@@ -106,9 +119,12 @@ case: t1 t2 => [t1|] [t2|] //=. by split; case => /st_eq ->. Qed.
 Definition treeR (x y : tree T) := R (value x) (value y).
 
 Lemma treeR_order: order treeR.
- expand_order Rord. rewrite /order /total /transitive /irreflexive /asymmetric.
- by repeat (split; repeat (case; mf; mf)); rewrite /treeR /=; 
-  [apply H | apply H0 | apply H1|move: H9 H10; rewrite /treeR /=; apply H2]. Qed.
+ expand_order Rord; rewrite /order /total /transitive /irreflexive /asymmetric.
+ repeat split.
+ + by move=> [x1 ts1][x2 ts2]; apply H.
+ + by move=> [x ts]; apply H0.
+ + by move=> [x1 ts1][x2 ts2]; apply H1.
+ + by move=> [x1 ts1][x2 ts2][x3 ts3]; apply H2. Qed.
 
 Corollary sorted_tree_uniq v ls: is_tree_sorted (Node v ls) -> uniq (map value ls).
 expand_order Rord. rewrite /= andb_comm => /andP [] _. by apply sorted_uniq. Qed.
@@ -275,13 +291,14 @@ expand_order Rord. elim: xs x => [|x' xs IH] //= x /andP []; rewrite /by_value /
  + move => A1 A2; rewrite IH //. move: A1 A2. apply path_trans, treeR_order. Qed.
 
 Lemma insert_same v a cs: sorted treeR cs -> find (by_value v) cs = Some a -> insert a (without v cs) = cs.
-elim: cs a v => [|[vc vcs] cs IH] a v //=; rewrite /by_value /=. case A0: (v == vc) => /= A1 [].
- + rewrite /insert => <-. move: A0 => /eqP ->. assert (A1':=A1). move: A1' => /path_without ->.
+elim: cs a v => [|[vc vcs] cs IH] a v //=; rewrite /by_value /=. case A0: (v == vc) => /= A1//.
+ + move=> []; rewrite /insert => <-. move: A0 => /eqP ->. assert (A1':=A1). 
+   move: A1' => /path_without ->.
    by rewrite g_insert_path; try apply treeR_order.
- + move => A2. case A3: (eq_op _ _) => /=. move: A3 A2 => /eqP -> /find_pred /=. by rewrite A0. 
+ + move => A2. case A3: (eq_op _ _) => /=. move: A3 A2 => /eqP -> /find_pred /=. by rewrite A0.
    case A4: (treeR a _). have: (treeR (Node vc vcs) a) by move: A1 A2; apply /path_find.
-   expand_order treeR_order. by rewrite H1 A4.
- + rewrite IH => //. by apply path_sorted in A1. Qed.
+   * expand_order treeR_order. by rewrite H1 A4.
+   * rewrite IH => //. by apply path_sorted in A1. Qed.
 
 (* Open operation *)
 

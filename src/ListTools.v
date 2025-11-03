@@ -1,4 +1,4 @@
-Require Import Commons.
+From OTRocq Require Import Commons.
 
 Section Lists.
 
@@ -72,8 +72,10 @@ Proof. split. elim: xs es ys i H => [|x xs IHxs] es ys.
 
 Lemma ins_id xs ys i:
  ins i [::] xs = Some ys -> xs = ys.
-Proof. 
-by elim: i xs ys => [|i Hi] [|x xs] ys // [] //= /wcons_some [ys'] [] /Hi ->. Qed.
+Proof. elim: i xs ys => [|i Hi] [|x xs] ys//=.
+ + by case.
+ + by case.
+ + by move=> /wcons_some [ys'] [] /Hi ->. Qed.
 
 Lemma oins_Swcons (x : X) (es : seq X): forall xs i, 
   oins (i.+1) es (x :~: xs) = x :~: oins i es xs.
@@ -150,7 +152,9 @@ case Hes: (size es == 0); first by move/eqP: Hes ->. move /neq0_lt0n in Hes.
 by rewrite -(addn0 (size es)) => /(IHxs _ _ Hes). Qed.
 
 Lemma rm_eq (l1 l2 l3 : seq X): rm 0 l2 l1 = Some l3 -> l2 ++ l3 = l1.
-elim: l2 l1 => [|a2 l2 IHl] [|a1 l1] //=; try by case => <-.
+elim: l2 l1 => [|a2 l2 IHl] [|a1 l1] //=.
+ + by case.
+ + by case.
  + case A0: (a1 == a2) => // /IHl. by move: A0 => /eqP -> ->. Qed.
 
 (* nth element operation and its properties *)
@@ -204,8 +208,10 @@ Lemma rplc_lenle k xs (e : option X): size xs <= k -> rplc k e xs = None.
 case: e => [a /(rplc_noneP1 a) //|] ?. by rewrite rplc_none_none. Qed.
 
 Lemma rplc_none_case k xs (e : option X): rplc k e xs = None <-> e = None \/ size xs <= k.
-Proof. case: e => [a|]; rewrite ?rplc_none_none; split;
- try move=> []; try move /rplc_noneP1; try done; by [right| left]. Qed.
+Proof. case: e => [a|]; rewrite ?rplc_none_none; split=> //.
+ + by move /rplc_noneP1=> ->; right.
+ + by move=> []//=/rplc_noneP1.
+ + by left. Qed.
 
 Lemma rplc_some k xs (e : option X) y: rplc k e xs = Some y 
 -> k < size xs /\ (exists e',  e = Some e').
@@ -237,8 +243,9 @@ elim: i l => [|n IHn] [[|a l]|] //=. by move: (IHn (Some l)) => /= ->. Qed.
  
 (* replace and nth propertice *)
 Lemma rplc_nth_id (xs ys: seq X) i: rplc i (nth i xs) xs = Some ys -> xs = ys.
-Proof. elim: i xs ys => [|i Hi] [|x xs] ys //= []; first by move ->.
-  by move /wcons_some => [xs'] [] /Hi -> ->. Qed.
+Proof. elim: i xs ys => [|i Hi] [|x xs] ys //=. 
+ + by case.
+ + by move /wcons_some => [xs'] [] /Hi -> ->. Qed.
 
 Lemma rplc_nth_id' i xs y: nth i xs = Some y -> rplc i (nth i xs) xs = Some xs.
 Proof. by elim: i y xs => [|i IHi] y [|x xs] //= /IHi ->. Qed.
@@ -362,10 +369,11 @@ Lemma rm_insC_in': forall i k xs eis ers ers' xs',
 ins k eis ers = Some ers' -> ins (i+k) eis xs = Some xs' ->
   rm i ers xs = rm i ers' xs'.
 Proof. elim => [|i Hi].
- +  elim => [|k Hk] [|x?] eis [|er?] ?? //=;
-  try (by move=> [] <- [] <-; rewrite rm_0app).
-  * move => /wcons_some [?] [] => H1 -> /wcons_some [?] [] => H2 -> /=.
-    case: (x == er) H1 H2 => //. by apply /Hk.
+ + elim => [|k Hk] [|x?] eis [|er?] ?? //=.
+   1, 2, 3: by move=> []<-[]<-; rewrite rm_0app.
+   * by move=> []<-[]<-; rewrite rm_0app//=.
+   * by move/wcons_some=> [?][H1]-> /wcons_some[?][H2]->/=; case: (x == er) H1 H2=> //=;
+     apply Hk.
  + by move => ? [|??] ? [|??] ? ? //= H1 /wcons_some [?] [H2 ->];
    rewrite rm_Scons -(Hi _ _ _ _ _ _ H1 H2) // ?rm_id. Qed.
 
@@ -443,7 +451,7 @@ rplc k (Some e1) e2s = Some e2s' -> orplc (i + k) (Some e1) (ins i e2s xs) = ins
 Proof. intros. elim: i xs k e1 e2s e2s' H => [|i IHi].
  + move=> xs k e1 e2s e2s'; rewrite add0n //=.
    elim: k xs e1 e2s e2s' => [|k IHk] xs e1 e2s e2s'; case: e2s => [|e2 e2s] //; rewrite cat_cons //=.
-  * by move=> [] [] <-; rewrite cat_cons.
+  * by case=> <-; rewrite cat_cons.
   * by move=> /wcons_some [e2s''] [] /(IHk xs) -> ->.
  + by move=> [|x xs] k e1 e2s e2s' //=; rewrite addSn orplc_Swcons => /(IHi xs) ->.
 Qed.
@@ -521,8 +529,9 @@ Proof. elim: n ys => [|n IHn] ys [|x xs] [|e es] [|n2] //= Hltn /wcons_some [ys'
 
 Lemma rm_some_nth_aft: forall n xs ys es n2, n < n2 -> rm n2 es xs = Some ys
 -> nth n ys = nth n xs.
-Proof. elim => [|n IHn] [|x xs] ys [|e es] [|n2] //= Hltn; try move=> [] <- //=; 
- move=> /wcons_some [ys'] [] Hys' -> //; rewrite (IHn xs _ _ n2 _ Hys') //. 
+Proof. elim => [|n IHn] [|x xs] ys [|e es] [|n2] //= Hltn.
+ 1, 2, 4, 5: by case=> <- //=.
+ all: by move=> /wcons_some[ys'][] Hys'->//; rewrite (IHn xs _ _ n2 _ Hys') //. 
 Qed.
 
 Lemma rm_some_nth_bef: forall n xs ys es n2, n <= n2 -> rm n es xs = Some ys
@@ -639,13 +648,13 @@ size (cut xs i n) =
  else if (i <= size xs) then i
  else size xs.
 Proof. elim: i xs n => [|i IHi] xs n /=.
- + elim: n xs => [|n IHn] [|x xs] //=. rewrite IHn. nat_norm.
+ + elim: n xs => [|n IHn] [|x xs] //=. (* rewrite IHn. nat_norm.
    rewrite -addn1 -(addn1 (size xs)) leq_add2r. case Hleq: (n <= size xs) => //=.
-   by rewrite ?addn1 subSS.
- + move: xs => [|x xs] //=. rewrite IHi. nat_norm. 
+   by rewrite ?addn1 subSS.*)
+ + move: xs => [|x xs] //=; rewrite IHi. nat_norm. 
    rewrite -(addn1 (i + n)) -(addn1 (size xs)) leq_add2r. case Hleq: (i + n <= size xs). 
    move: (Hleq) => /leq_addWl. rewrite -addn1 addnC => /addnBA ->. by rewrite addnC.
-   rewrite -(addn1 i) leq_add2r. case: (i <= size xs); ssromega.
+   rewrite -(addn1 i) leq_add2r. case: (i <= size xs)=> //=; lia. 
 Qed.
 
 Theorem cut_lenleq (xs : seq X) i n:

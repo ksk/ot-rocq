@@ -1,7 +1,5 @@
-Require Import ssreflect ssrbool.
-Require Import mathcomp.ssreflect.eqtype.
-Require Import mathcomp.ssreflect.ssrnat.
-Require Export Ssromega.
+From mathcomp Require Import all_ssreflect.
+From OTRocq Require Export Ssromega.
 
 CoInductive interval_point x sx y: bool -> bool -> Prop :=
  | IP_Left of y <= x : interval_point x sx y true false

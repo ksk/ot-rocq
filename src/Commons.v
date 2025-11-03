@@ -1,8 +1,5 @@
-From Coq Require Export ssreflect ssrfun ssrbool Omega Basics Equality.
-Require Export mathcomp.ssreflect.eqtype.
-Require Export mathcomp.ssreflect.seq.
-Require Export mathcomp.ssreflect.ssrnat.
-Require Export Ssromega.
+From mathcomp Require Export all_ssreflect zify.
+From Stdlib Require Import Basics.
 
 Definition bind {X} {Y} (f : X -> option Y) (x : option X) : option Y :=
  match x with Some x' => f x' | _ => None end.
