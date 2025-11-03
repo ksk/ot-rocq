@@ -21,7 +21,7 @@ make -f CoqMakefile
 to compile it.
 
 The original code (tag `original-ot-coq`) is preserved for reference.
-The branch `ot-rocq` contains modifications to make it work on modern environments. The original `README.md` follows below.
+The branch `master` contains modifications to make it work on modern environments. The original `README.md` follows below.
 
 
 -------------------
