@@ -37,4 +37,5 @@ Transformation for Trees" by S. Sinchuk, P. Chuprikov and K. Solomatov published
 ## Building
 The original source code is compatible with Coq 8.4 and makes use of Ssreflect.
 The repository also contains version of the code compatible with Coq 8.8 and 8.13.
-Use `make -f Makefile` to build the project.
+Use `make -f Makefile`[^1] to build the project.
+[^1] The `Makefile` has been removed from this repository to avoid confusion.
